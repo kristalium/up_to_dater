@@ -497,7 +497,7 @@ root.title("Up_to_dater")
 ###Instructions
 root.configure(bg='black')
 
-label = tk.Label(root, text="Press 'Add Path', select the original file, then your file.", bg='black', fg='white')
+label = tk.Label(root, text="Press 'Add Pair', select the original file, then your file.", bg='black', fg='white')
 label.pack(pady=10)
 
 frame = tk.Frame(root, bg='black')
