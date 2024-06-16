@@ -205,7 +205,7 @@ def process_files(mod_file, submod_file, output_file):
                 submod_line_index = sorted_submod_indexes[i + submod_line_index_increaser - submod_line_index_decreaser] if i + submod_line_index_increaser - submod_line_index_decreaser < len(sorted_submod_indexes) else None
                 
                 ###Stops the loop if lines are empty. Do not touch.
-                if mod_line_index is None or submod_line_index is None:
+                if (mod_line_index is None or submod_line_index is None) and (not "###MOD_ADD###" in next_submod_line and not "###MOD_DEL###" in next_submod_line and not "###MOD_REP###" in next_submod_line):
                     break 
                 
                 ###Get the line from the list based on it's index
