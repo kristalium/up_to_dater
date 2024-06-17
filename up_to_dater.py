@@ -205,7 +205,7 @@ def process_files(mod_file, submod_file, output_file):
                 submod_line_index = sorted_submod_indexes[i + submod_line_index_increaser - submod_line_index_decreaser] if i + submod_line_index_increaser - submod_line_index_decreaser < len(sorted_submod_indexes) else None
                 
                 ###Stops the loop if lines are empty. Do not touch.
-                if (mod_line_index is None or submod_line_index is None) and (not "###MOD_ADD###" in next_submod_line and not "###MOD_DEL###" in next_submod_line and not "###MOD_REP###" in next_submod_line):
+                if mod_line_index is None and (not "###MOD_ADD###" in next_submod_line and not "###MOD_DEL###" in next_submod_line and not "###MOD_REP###" in next_submod_line):
                     break 
                 
                 ###Get the line from the list based on it's index
@@ -387,7 +387,7 @@ def process_files(mod_file, submod_file, output_file):
                     print("Unexpected case, kristalium fucked up.")
         
         if mod_fail == True:
-            failed_output_file = os.path.splitext(submod_file)[0] + "_FAILED_OTPUT" + os.path.splitext(submod_file)[1]
+            failed_output_file = os.path.splitext(submod_file)[0] + "_FAILED_OUTPUT" + os.path.splitext(submod_file)[1]
             if os.path.exists(failed_output_file):
                 os.remove(failed_output_file)
             os.rename(output_file, failed_output_file)
