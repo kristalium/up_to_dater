@@ -9,17 +9,17 @@ And ultimately it hurts the quality of content, because having to redo your work
 To fix all of that, this script inserts your modifications into updated code automatically. It takes original code and your modified code, then it compares them, line by line, looking for every difference that they have. Everything that was removed or added in the update gets removed or added, but your code gets placed right were it was before the update. All you have to do is mark your lines of code with comments.
 
 Comment your new lines like this:\
-`###MOD_ADD###`   
+`###MOD_ADD1###`   
 `something something`\
-`###ADD_MOD###`
+`###MOD_ADD2###`
 
 Erase lines that you don't want and put this comment where they were:\
 `###MOD_DEL###`
 
 Or replace code with whatever you want, by putting these comments around original lines:\
-`###MOD_REP###`   
+`###MOD_REP1###`   
 `northing nothing`\
-`###REP_MOD###`
+`###MOD_REP2###`
 
 And your code will stay right were it was.
 
@@ -53,31 +53,31 @@ Script was tested on HOI4 code - I have no idea if it works for other Paradox ga
 
 ## Known issues
 
-#### Do not write new markers right after ###MOD_DEL### or ###MOD_REP### like this:
+#### Do not write new markers right after ###MOD_DEL### or ###MOD_REP1### like this:
 `###MOD_DEL###`\
-`###MOD_ADD###`\
-Just don't, I don't want to fix that. ###MOD_REP### combines both addition and deletion, so use it instead of multiple markers. 
+`###MOD_ADD1###`\
+Just don't, I don't want to fix that. ###MOD_REP1### combines both addition and deletion, so use it instead of multiple markers. 
 
 #### This kind of code: 
-`trigger = { NOT = { original_tag = SOV ###ADD_MOD### TAG = POL ###MOD_ADD### TAG = GER } }`
+`trigger = { NOT = { original_tag = SOV ###MOD_ADD1### TAG = POL ###MOD_ADD2### TAG = GER } }`
 
 Will never work, script will not recognise this. And even if it would print this, marker ###ADD_MOD### just comments out everything after first #, breaking the code.
 Still, some people have a habit of writing code in a single line.
 
 To make your modification appear as a single line (why?) mark it this way:\
-`###REP_MOD###`\
+`###REP_MOD1###`\
 `trigger = { NOT = { original_tag = SOV TAG = POL TAG = GER } }`\
-`###MOD_REP###` 
+`###REP_MOD2###` 
 
 It is still not perfect, because if anything changes inside the braces you will never know, the script will replace original line with your code not even checking anything.
 
 Best way to fix this will be redacting your submod code to something like this, if possible:\
 `trigger = { NOT = { original_tag = SOV TAG = GER } }`\
-`###MOD_ADD###`\
+`###MOD_ADD1###`\
 `trigger = {`\
 `TAG = POL`\
 `}`\
-`###ADD_MOD###`
+`###MOD_ADD2###`
 
-#### If original code changed after your ###MOD_DEL### or ###MOD_REP### markers, output will likely be broken.
+#### If original code changed after your ###MOD_DEL### or ###MOD_REP1### markers, output will likely be broken.
 Really broken. It is pretty hard to even detect how exactly it will break, so I decided not to bother.

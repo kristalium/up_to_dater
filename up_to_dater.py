@@ -18,7 +18,7 @@ def read_file(filepath):
         with open(filepath, 'r') as file:
             for idx, line in enumerate(file):
                 original_line = line.rstrip('\n') 
-                all_file_lines[f"mod_line{idx+1:04d}"] = original_line
+                all_file_lines[f"mod_line{idx+1:06d}"] = original_line
         return all_file_lines
     except Exception as e:
         print(f"Error reading file {filepath}: {e}")
@@ -39,28 +39,28 @@ def process_files(mod_file, submod_file, output_file):
             for line in file:
             
                 original_line = line.rstrip('\n') 
-                if original_line.strip() == "###MOD_ADD###": ###If there is a line that starts with MOD_ADD...
+                if original_line.strip() == "###MOD_ADD1###": ###If there is a line that starts with MOD_ADD1...
                     is_in_submod_section = True              ###...Your mod code was encountered. 
                     current_submod_section += original_line + "\n"
                     continue
                     
-                elif original_line.strip() == "###ADD_MOD###":
-                    is_in_submod_section = False             ###And all following code will be included into the single variable, until ADD_MOD is found.
+                elif original_line.strip() == "###MOD_ADD2###":
+                    is_in_submod_section = False             ###And all following code will be included into the single variable, until MOD_ADD2 is found.
                     current_submod_section += original_line + "\n"
-                    all_submod_lines_list[f"submod_line{submod_section_index:04d}"] = current_submod_section
+                    all_submod_lines_list[f"submod_line{submod_section_index:06d}"] = current_submod_section
                     submod_section_index += 1
                     current_submod_section = ""
                     continue
                     
-                elif original_line.strip() == "###MOD_REP###":
+                elif original_line.strip() == "###MOD_REP1###":
                     is_in_replacement_section = True
                     current_submod_section += original_line + "\n"
                     continue
                     
-                elif original_line.strip() == "###REP_MOD###":
+                elif original_line.strip() == "###MOD_REP2###":
                     is_in_replacement_section = False
                     current_submod_section += original_line + "\n"
-                    all_submod_lines_list[f"submod_line{submod_section_index:04d}"] = current_submod_section
+                    all_submod_lines_list[f"submod_line{submod_section_index:06d}"] = current_submod_section
                     submod_section_index += 1
                     current_submod_section = ""
                     continue    
@@ -69,7 +69,7 @@ def process_files(mod_file, submod_file, output_file):
                     current_submod_section += original_line + "\n"
                     
                 else:
-                    all_submod_lines_list[f"submod_line{submod_section_index:04d}"] = original_line
+                    all_submod_lines_list[f"submod_line{submod_section_index:06d}"] = original_line
                     submod_section_index += 1
     except Exception as e:
         print(f"Error reading submod file: {e}")
@@ -114,7 +114,7 @@ def process_files(mod_file, submod_file, output_file):
             util_stripped_submod_sequence = [line.strip() for line in submod_values[i:i + util_lookahead]]
             
             ###Check if there is marker in near 2 lines
-            if any(contains_marker(line, ["###MOD_ADD###", "###MOD_DEL###", "###MOD_REP###"]) for line in util_stripped_submod_sequence) and marker_found == False and markers_in_submod_sequence_one_fail_flag == False:
+            if any(contains_marker(line, ["###MOD_ADD1###", "###MOD_DEL###", "###MOD_REP1###"]) for line in util_stripped_submod_sequence) and marker_found == False and markers_in_submod_sequence_one_fail_flag == False:
                 return "markers_in_submod_sequence_one"
                 
             ###There is none
@@ -122,7 +122,7 @@ def process_files(mod_file, submod_file, output_file):
                 return "markers_in_submod_sequence_one_fail"
                 
             ###Check if there is a marker in near 6 lines
-            elif any(contains_marker(line, ["###MOD_ADD###", "###MOD_DEL###", "###MOD_REP###"]) for line in util_stripped_submod_sequence) and marker_found == False and markers_in_submod_sequence_two_fail_flag == False:
+            elif any(contains_marker(line, ["###MOD_ADD1###", "###MOD_DEL###", "###MOD_REP1###"]) for line in util_stripped_submod_sequence) and marker_found == False and markers_in_submod_sequence_two_fail_flag == False:
                 return "markers_in_submod_sequence_two"
                 
             ###There is none
@@ -172,8 +172,8 @@ def process_files(mod_file, submod_file, output_file):
             mod_deletion_started = False
             mod_deletion_completed = False
             
-            mod_replacement_started = False 
-            mod_replacement_completed = False
+            MOD_REP1lacement_started = False 
+            MOD_REP1lacement_completed = False
             
             marker_found = False
             markers_in_submod_sequence_one_fail_flag = False
@@ -205,7 +205,7 @@ def process_files(mod_file, submod_file, output_file):
                 submod_line_index = sorted_submod_indexes[i + submod_line_index_increaser - submod_line_index_decreaser] if i + submod_line_index_increaser - submod_line_index_decreaser < len(sorted_submod_indexes) else None
                 
                 ###Stops the loop if lines are empty. Do not touch.
-                if mod_line_index is None and (not "###MOD_ADD###" in next_submod_line and not "###MOD_DEL###" in next_submod_line and not "###MOD_REP###" in next_submod_line):
+                if mod_line_index is None and (not "###MOD_ADD1###" in next_submod_line and not "###MOD_DEL###" in next_submod_line and not "###MOD_REP1###" in next_submod_line):
                     break 
                 
                 ###Get the line from the list based on it's index
@@ -219,13 +219,13 @@ def process_files(mod_file, submod_file, output_file):
                 next_submod_line = all_submod_lines_list.get(next_submod_line_index, "")
                 
                 ###Detecting new content
-                if new_content_found == False and mod_deletion_started == False and mod_replacement_started == False and current_mod_line.strip() != current_submod_line.strip() and next_mod_line.strip() != next_submod_line.strip() and (not "###MOD_ADD###" in current_submod_line and not "###MOD_DEL###" in current_submod_line and not "###MOD_REP###" in current_submod_line):
+                if new_content_found == False and mod_deletion_started == False and MOD_REP1lacement_started == False and current_mod_line.strip() != current_submod_line.strip() and next_mod_line.strip() != next_submod_line.strip() and (not "###MOD_ADD1###" in current_submod_line and not "###MOD_DEL###" in current_submod_line and not "###MOD_REP1###" in current_submod_line):
                    new_content_found = True
                    new_content_end_found = False
                    file.write(current_mod_line + "\n") 
                 
                 ###Detecting new content and markers in the same time, which means something is very wrong with the code.
-                elif new_content_found == True and ("###MOD_ADD###" in current_submod_line or "###MOD_DEL###" in current_submod_line or "###MOD_REP###" in current_submod_line):
+                elif new_content_found == True and ("###MOD_ADD1###" in current_submod_line or "###MOD_DEL###" in current_submod_line or "###MOD_REP1###" in current_submod_line):
                     mod_fail = True
                     file.write("###MOD_FAIL###\n")
                     file.write(current_submod_line)
@@ -240,15 +240,15 @@ def process_files(mod_file, submod_file, output_file):
                     submod_line_index_increaser += 1
                 
                     ###Replacement marker found.
-                elif mod_replacement_started == False and "###MOD_REP###" in current_submod_line:
+                elif MOD_REP1lacement_started == False and "###MOD_REP1###" in current_submod_line:
                     file.write(current_submod_line)
-                    mod_replacement_started = True
-                    mod_replacement_completed = False                                        
+                    MOD_REP1lacement_started = True
+                    MOD_REP1lacement_completed = False                                        
                     mod_line_index_decreaser += 1
                     submod_line_index_increaser +=1    
                 
                 ###Printing before the closing brace and before the opening brace, because it is bad idea to it the other way around.
-                if ("}" in current_mod_line or "{" in current_mod_line) and "###MOD_ADD###" in current_submod_line:
+                if ("}" in current_mod_line or "{" in current_mod_line) and "###MOD_ADD1###" in current_submod_line:
                     file.write(current_submod_line)
                     file.write(current_mod_line + "\n")                    
                     submod_line_index_increaser += 1
@@ -256,7 +256,7 @@ def process_files(mod_file, submod_file, output_file):
                 ###Mod content remover and replacer. 
                 ###It looks that bad because it is a pretty complicated task to keep track of all changes that might happen to the code simultaneously.
                     ###Is there any lines to print after delition/replacement is over?
-                elif (mod_deletion_started == True and mod_deletion_completed == False) or (mod_replacement_started == True and mod_replacement_completed == False):
+                elif (mod_deletion_started == True and mod_deletion_completed == False) or (MOD_REP1lacement_started == True and MOD_REP1lacement_completed == False):
                                      
                     submod_values = list(all_submod_lines_list.values()) ###Get all lines from dictionary with submod values.
                     mod_sequence = [all_mod_lines_list.get(sorted_mod_indexes[i + 1 + mod_line_index_increaser - mod_line_index_decreaser + k], "") for k in range(lookahead)] ###Get a sequence of lines with the size of lookahead
@@ -309,8 +309,8 @@ def process_files(mod_file, submod_file, output_file):
                         file.write(current_mod_line + "\n")
                         mod_deletion_started = False
                         mod_deletion_completed = False
-                        mod_replacement_started = False
-                        mod_replacement_completed = False
+                        MOD_REP1lacement_started = False
+                        MOD_REP1lacement_completed = False
                         marker_found = False
                         markers_in_submod_sequence_one_fail_flag = False
                         markers_in_submod_sequence_two_fail_flag = False
@@ -322,8 +322,8 @@ def process_files(mod_file, submod_file, output_file):
                     elif function_result == True:
                         mod_deletion_started = False
                         mod_deletion_completed = False
-                        mod_replacement_started = False
-                        mod_replacement_completed = False
+                        MOD_REP1lacement_started = False
+                        MOD_REP1lacement_completed = False
                         marker_found = False
                         markers_in_submod_sequence_one_fail_flag = False
                         markers_in_submod_sequence_two_fail_flag = False
@@ -333,8 +333,8 @@ def process_files(mod_file, submod_file, output_file):
                         util_lookahead = 2
                 ###Mod content remover end        
                     
-                    ###Lines are not equal. ###MOD_ADD### detected, printing mod code and then your code.
-                elif current_mod_line.strip() != current_submod_line.strip() and "###MOD_ADD###" in current_submod_line and not new_content_found == True:
+                    ###Lines are not equal. ###MOD_ADD1### detected, printing mod code and then your code.
+                elif current_mod_line.strip() != current_submod_line.strip() and "###MOD_ADD1###" in current_submod_line and not new_content_found == True:
                     file.write(current_mod_line + "\n")
                     file.write(current_submod_line)
                     submod_line_index_increaser +=1                    
