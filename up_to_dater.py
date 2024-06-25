@@ -172,8 +172,8 @@ def process_files(mod_file, submod_file, output_file):
             mod_deletion_started = False
             mod_deletion_completed = False
             
-            MOD_REP1lacement_started = False 
-            MOD_REP1lacement_completed = False
+            mod_replacement_started = False 
+            mod_replacement_completed = False
             
             marker_found = False
             markers_in_submod_sequence_one_fail_flag = False
@@ -219,7 +219,7 @@ def process_files(mod_file, submod_file, output_file):
                 next_submod_line = all_submod_lines_list.get(next_submod_line_index, "")
                 
                 ###Detecting new content
-                if new_content_found == False and mod_deletion_started == False and MOD_REP1lacement_started == False and current_mod_line.strip() != current_submod_line.strip() and next_mod_line.strip() != next_submod_line.strip() and (not "###MOD_ADD1###" in current_submod_line and not "###MOD_DEL###" in current_submod_line and not "###MOD_REP1###" in current_submod_line):
+                if new_content_found == False and mod_deletion_started == False and mod_replacement_started == False and current_mod_line.strip() != current_submod_line.strip() and next_mod_line.strip() != next_submod_line.strip() and (not "###MOD_ADD1###" in current_submod_line and not "###MOD_DEL###" in current_submod_line and not "###MOD_REP1###" in current_submod_line and not submod_line_index is None):
                    new_content_found = True
                    new_content_end_found = False
                    file.write(current_mod_line + "\n") 
@@ -240,10 +240,10 @@ def process_files(mod_file, submod_file, output_file):
                     submod_line_index_increaser += 1
                 
                     ###Replacement marker found.
-                elif MOD_REP1lacement_started == False and "###MOD_REP1###" in current_submod_line:
+                elif mod_replacement_started == False and "###MOD_REP1###" in current_submod_line:
                     file.write(current_submod_line)
-                    MOD_REP1lacement_started = True
-                    MOD_REP1lacement_completed = False                                        
+                    mod_replacement_started = True
+                    mod_replacement_completed = False                                        
                     mod_line_index_decreaser += 1
                     submod_line_index_increaser +=1    
                 
@@ -256,7 +256,7 @@ def process_files(mod_file, submod_file, output_file):
                 ###Mod content remover and replacer. 
                 ###It looks that bad because it is a pretty complicated task to keep track of all changes that might happen to the code simultaneously.
                     ###Is there any lines to print after delition/replacement is over?
-                elif (mod_deletion_started == True and mod_deletion_completed == False) or (MOD_REP1lacement_started == True and MOD_REP1lacement_completed == False):
+                elif (mod_deletion_started == True and mod_deletion_completed == False) or (mod_replacement_started == True and mod_replacement_completed == False):
                                      
                     submod_values = list(all_submod_lines_list.values()) ###Get all lines from dictionary with submod values.
                     mod_sequence = [all_mod_lines_list.get(sorted_mod_indexes[i + 1 + mod_line_index_increaser - mod_line_index_decreaser + k], "") for k in range(lookahead)] ###Get a sequence of lines with the size of lookahead
@@ -309,8 +309,8 @@ def process_files(mod_file, submod_file, output_file):
                         file.write(current_mod_line + "\n")
                         mod_deletion_started = False
                         mod_deletion_completed = False
-                        MOD_REP1lacement_started = False
-                        MOD_REP1lacement_completed = False
+                        mod_replacement_started = False
+                        mod_replacement_completed = False
                         marker_found = False
                         markers_in_submod_sequence_one_fail_flag = False
                         markers_in_submod_sequence_two_fail_flag = False
@@ -322,8 +322,8 @@ def process_files(mod_file, submod_file, output_file):
                     elif function_result == True:
                         mod_deletion_started = False
                         mod_deletion_completed = False
-                        MOD_REP1lacement_started = False
-                        MOD_REP1lacement_completed = False
+                        mod_replacement_started = False
+                        mod_replacement_completed = False
                         marker_found = False
                         markers_in_submod_sequence_one_fail_flag = False
                         markers_in_submod_sequence_two_fail_flag = False
@@ -340,9 +340,13 @@ def process_files(mod_file, submod_file, output_file):
                     submod_line_index_increaser +=1                    
                 
                 ###New content printer
+                    ###New content is still there but mod file is already over. Printing only new content from now on, not looking at anything else.
+                elif new_content_found == True and new_content_end_found == False and next_submod_line_index is None:
+                    file.write(current_mod_line + "\n")
+                    new_content_found = False 
+                
                     ###Next lines are equal, but they are both spaces or braces. Not accurate enough to be sure, let's check some more.
                 elif new_content_found == True and new_content_end_found == False and ((next_mod_line.strip() == "" and next_submod_line.strip() == "") or (next_mod_line.strip() == "}" and next_submod_line.strip() == "}")):
-                    file.write(current_mod_line + "\n")
                     mod_line_index_decreaser += 1
                     submod_line_index_increaser += 1
                     
@@ -376,7 +380,7 @@ def process_files(mod_file, submod_file, output_file):
                 ###New code printer end
                 
                 ###This is for the cases when only one line of code in the mod was changed after update, not a whole block.
-                elif new_content_found == False and current_mod_line.strip() != current_submod_line.strip() and next_mod_line.strip() == next_submod_line.strip():               
+                elif new_content_found == False and current_mod_line.strip() != current_submod_line.strip() and next_mod_line.strip() == next_submod_line.strip() or next_submod_line_index is None:               
                     file.write(current_mod_line + "\n")
                     
                 ###Lines are the same. Keeping the code from the original mod    
