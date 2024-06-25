@@ -39,11 +39,12 @@ Script was tested on HOI4 code - I have no idea if it works for other Paradox ga
 
 2. Mark all things that you changed in the code with the markers. Instruction for people who like diagrams:
 
-![Диаграмма без названия](https://github.com/kristalium/up_to_dater/assets/163107856/299d75ad-283c-4124-8598-391bfb9faf03)
+![howto](https://github.com/kristalium/up_to_dater/assets/163107856/23d042b8-44e6-47b5-818b-5150f5be6ecd)
+
 
 3. Run the script, select the folders with files. Original file first, your file second.
 
-![image](https://github.com/kristalium/up_to_dater/assets/163107856/55a16a58-c6ad-4aa9-8f22-5239d9985051)
+![window](https://github.com/kristalium/up_to_dater/assets/163107856/acf1604d-0f7b-423d-ab8c-95f1a8fb6897)
 
 4. Press the red button.
 
