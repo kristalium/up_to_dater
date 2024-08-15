@@ -168,6 +168,7 @@ def process_files(mod_file, submod_file, output_file):
                         
             new_content_found = False ###Marks that original code changed a lot.
             new_content_end_found = False ###The end of changes was found, both sets of code are in proper spot again.
+            constant_new_content_found = False ###If still false after whole code is checked, nothing new was added, meaning that there is no need to generate output file. Cannot be set to False again.
             
             mod_deletion_started = False
             mod_deletion_completed = False
@@ -179,8 +180,6 @@ def process_files(mod_file, submod_file, output_file):
             markers_in_submod_sequence_one_fail_flag = False
             markers_in_submod_sequence_two_fail_flag = False
             markers_second_check_started = False
-            ###This counts how much times function find_mod_in_submod_sequence failed to find proper start spop when marker was found near.
-            fail_counter = 0 
             
             ###Counting how much lines were added or deleted
             mod_line_index_increaser = 0
@@ -222,6 +221,7 @@ def process_files(mod_file, submod_file, output_file):
                 if new_content_found == False and mod_deletion_started == False and mod_replacement_started == False and current_mod_line.strip() != current_submod_line.strip() and next_mod_line.strip() != next_submod_line.strip() and (not "###MOD_ADD1###" in current_submod_line and not "###MOD_DEL###" in current_submod_line and not "###MOD_REP1###" in current_submod_line and not submod_line_index is None):
                    new_content_found = True
                    new_content_end_found = False
+                   constant_new_content_found = True
                    file.write(current_mod_line + "\n") 
                 
                 ###Detecting new content and markers in the same time, which means something is very wrong with the code.
@@ -396,7 +396,10 @@ def process_files(mod_file, submod_file, output_file):
                 os.remove(failed_output_file)
             os.rename(output_file, failed_output_file)
             mod_fail = False
-            
+        
+        if constant_new_content_found == False:
+            os.remove(output_file)        
+        
     except Exception as e:
         print(f"Error writing to output file: {e}")
 
