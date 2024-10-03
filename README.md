@@ -36,7 +36,7 @@ Don't delete your mod files after the script gives you the output. Backups are i
 Script was tested on HOI4 code - I have no idea if it works for other Paradox games. If it does, well, great.
 
 ## How to use
-1. Download [Python](https://www.python.org/downloads/), then this script (with a green button that says <code>). If it doesn't work right away try to check if tkinter got installed or not.
+1. Download [Python](https://www.python.org/downloads/), then this script (with a green button that says code). If it doesn't work right away try to check if tkinter got installed or not.
 
 2. Now go to your mod and mark all things that you changed in the game files. Instruction for people who like diagrams:
 
