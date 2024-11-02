@@ -1,16 +1,30 @@
-###As one great programmer said: "A genius admires simplicity, an idiot admires complexity."
-###And this code was made by an idiot who uses python for the first time in his life.
-
 import re
 import os
+import sys
 import threading
-import tkinter as tk
-from tkinter import filedialog
+from PyQt5.QtWidgets import (
+    QMainWindow,
+    QApplication,
+    QInputDialog,
+    QMessageBox,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QListWidget,
+    QFileDialog,
+    QScrollArea,
+    QFrame,
+    QListWidgetItem
+)
+from PyQt5.QtCore import Qt
 
 ###Shows that original code changed too much, and attempts to put your code into it will result in bad output.
 mod_fail = False 
 
-config_file = os.path.join(os.path.dirname(__file__), 'file_paths.txt')
+###80MB limit on output file size to prevent scary things
+file_size_limit = 80 * 1024 * 1024 
 
 def read_file(filepath):
     all_file_lines = {}
@@ -99,14 +113,13 @@ def process_files(mod_file, submod_file, output_file):
                 
         if log_count >= max_log_entries:
             print("Too many mismatches, shut up.")
-            
         return False
     
     ###Like the previous function, but reversed - this one looks if mod lines exist in submod. Used to determine how much lines did you remove or add to the code.
     ###Also handles situations where markers are too close to each other, which causes some problems finding the proper place to stop the loop.
     def find_mod_in_submod_sequence(mod_sequence, all_submod_lines_list, start_index):
         log_count = 0
-        max_log_entries = 10000
+        max_log_entries = 60
         
         for i in range(start_index, end_index):
             ###Getting variables naked because whitespaces ruin checks
@@ -115,14 +128,17 @@ def process_files(mod_file, submod_file, output_file):
             
             ###Check if there is marker in near 2 lines
             if any(contains_marker(line, ["###MOD_ADD1###", "###MOD_DEL###", "###MOD_REP1###"]) for line in util_stripped_submod_sequence) and marker_found == False and markers_in_submod_sequence_one_fail_flag == False:
+                print(f"Marker found at position {i} with util_lookahead {util_lookahead}: stripped submod values {util_stripped_submod_sequence} vs mod sequence {util_stripped_mod_sequence}")
                 return "markers_in_submod_sequence_one"
                 
             ###There is none
             elif markers_in_submod_sequence_one_fail_flag == False and marker_found == False:
+                print(f"No marker found at position {i} with util_lookahead {util_lookahead}: stripped submod values {util_stripped_submod_sequence} vs mod sequence {util_stripped_mod_sequence}")
                 return "markers_in_submod_sequence_one_fail"
                 
             ###Check if there is a marker in near 6 lines
             elif any(contains_marker(line, ["###MOD_ADD1###", "###MOD_DEL###", "###MOD_REP1###"]) for line in util_stripped_submod_sequence) and marker_found == False and markers_in_submod_sequence_two_fail_flag == False:
+                print(f"Marker found at position {i} with util_lookahead {util_lookahead}: stripped submod values {util_stripped_submod_sequence} vs mod sequence {util_stripped_mod_sequence}")
                 return "markers_in_submod_sequence_two"
                 
             ###There is none
@@ -131,27 +147,33 @@ def process_files(mod_file, submod_file, output_file):
                 
             ###Both lines can be equal if they are "}" or " ", but this does not mean they are in proper place.
             elif (stripped_submod_sequence == stripped_mod_sequence and all(char in {"", " ", "}"} for char in stripped_mod_sequence)):
+                print(f"Not the best match found at position {i} with lookahead {lookahead}: stripped submod values {stripped_submod_sequence} vs mod sequence {stripped_mod_sequence}")
                 return "markers_second_check"
                 
             ###Reverse logic. If previous lines were both "}" or " ", but next ones are not equal, script probably skipped enough same lines and previous lines were actually in proper place.
             elif stripped_submod_sequence != stripped_mod_sequence and markers_second_check_started == True:
+                print(f"Confirming missmatch found at position {i} with lookahead {lookahead}: stripped submod values {stripped_submod_sequence} vs mod sequence {stripped_mod_sequence}")
                 return True
                 
             ###Everything is equal without a marker, good.
             elif stripped_submod_sequence == stripped_mod_sequence and marker_found == False:
+                print(f"Match found at position {i} with lookahead {lookahead}: stripped submod values {stripped_submod_sequence} vs mod sequence {stripped_mod_sequence}")
                 return True
                 
-            ###Everything is equal with a marker, good. Why two checks??? Uh...
+            ###Everything is equal with a marker, good.
             elif stripped_submod_sequence == stripped_mod_sequence and marker_found == True:
+                print(f"Match found at position {i} with lookahead {lookahead}: stripped submod values {stripped_submod_sequence} vs mod sequence {stripped_mod_sequence}")
                 return True
                 
             ###Limits the amount of iterations of this loop if marker was found.
             elif marker_found == True and (i > start_index):
+                print(f"Breakdance! i - {i} start_index - {start_index} log_count - {log_count}")
                 break
                 
             ###Limits the amount of iterations of this loop by counting iterations of this loop because why not. Also I used this to create logs.
             if log_count < max_log_entries:
                 log_count += 1
+                print(f"Mismatch found at position {i} with lookahead {lookahead}: stripped submod values {stripped_submod_sequence} vs mod sequence {stripped_mod_sequence}")
         
         ###Limit was reached, but common lines were mot found.
         return False
@@ -203,7 +225,7 @@ def process_files(mod_file, submod_file, output_file):
                 mod_line_index = sorted_mod_indexes[i + mod_line_index_increaser - mod_line_index_decreaser] if i + mod_line_index_increaser - mod_line_index_decreaser < len(sorted_mod_indexes) else None
                 submod_line_index = sorted_submod_indexes[i + submod_line_index_increaser - submod_line_index_decreaser] if i + submod_line_index_increaser - submod_line_index_decreaser < len(sorted_submod_indexes) else None
                 
-                ###Stops the loop if lines are empty. Do not touch.
+                ###Stops the loop if lines are empty. Do not touch, this is break pedal
                 if mod_line_index is None and (not "###MOD_ADD1###" in next_submod_line and not "###MOD_DEL###" in next_submod_line and not "###MOD_REP1###" in next_submod_line):
                     break 
                 
@@ -216,6 +238,11 @@ def process_files(mod_file, submod_file, output_file):
                 next_submod_line_index = sorted_submod_indexes[i + 1 + submod_line_index_increaser - submod_line_index_decreaser] if i + 1 + submod_line_index_increaser - submod_line_index_decreaser < len(sorted_submod_indexes) else None
                 next_mod_line = all_mod_lines_list.get(next_mod_line_index, "")
                 next_submod_line = all_submod_lines_list.get(next_submod_line_index, "")
+                
+                print(f"\nMod Variable {mod_line_index}: {current_mod_line.strip()}")
+                print(f"Submod Variable {submod_line_index}: {current_submod_line.strip()}")
+                print(f"Next Mod Variable {next_mod_line_index}: {next_mod_line.strip()}")
+                print(f"Next Submod Variable {next_submod_line_index}: {next_submod_line.strip()}")
                 
                 ###Detecting new content
                 if new_content_found == False and mod_deletion_started == False and mod_replacement_started == False and current_mod_line.strip() != current_submod_line.strip() and next_mod_line.strip() != next_submod_line.strip() and (not "###MOD_ADD1###" in current_submod_line and not "###MOD_DEL###" in current_submod_line and not "###MOD_REP1###" in current_submod_line and not submod_line_index is None):
@@ -230,32 +257,36 @@ def process_files(mod_file, submod_file, output_file):
                     file.write("###MOD_FAIL###\n")
                     file.write(current_submod_line)
                     file.write("###MOD_FAIL###\n")
-                    submod_line_index_increaser += 2
                     
-                    ###Deletion marker found.
+                    submod_line_index_increaser += 2
+                    continue
+                
                 elif mod_deletion_started == False and "###MOD_DEL###" in current_submod_line:
-                    file.write(current_submod_line + "\n")                    
+                    file.write(current_submod_line + "\n")
+                    
                     mod_deletion_started = True
                     mod_deletion_completed = False                    
                     submod_line_index_increaser += 1
                 
-                    ###Replacement marker found.
                 elif mod_replacement_started == False and "###MOD_REP1###" in current_submod_line:
                     file.write(current_submod_line)
                     mod_replacement_started = True
-                    mod_replacement_completed = False                                        
+                    mod_replacement_completed = False                    
+                    
                     mod_line_index_decreaser += 1
                     submod_line_index_increaser +=1    
                 
                 ###Printing before the closing brace and before the opening brace, because it is bad idea to it the other way around.
                 if ("}" in current_mod_line or "{" in current_mod_line) and "###MOD_ADD1###" in current_submod_line:
                     file.write(current_submod_line)
-                    file.write(current_mod_line + "\n")                    
+                    file.write(current_mod_line + "\n")
+                    
                     submod_line_index_increaser += 1
                 
-                ###Mod content remover and replacer. 
+                ######################################
+                ###Mod content remover and replacer###
+                ######################################
                 ###It looks that bad because it is a pretty complicated task to keep track of all changes that might happen to the code simultaneously.
-                    ###Is there any lines to print after delition/replacement is over?
                 elif (mod_deletion_started == True and mod_deletion_completed == False) or (mod_replacement_started == True and mod_replacement_completed == False):
                                      
                     submod_values = list(all_submod_lines_list.values()) ###Get all lines from dictionary with submod values.
@@ -270,43 +301,41 @@ def process_files(mod_file, submod_file, output_file):
                     util_stripped_mod_sequence = [line.strip() for line in util_mod_sequence]
                     
                     function_result = find_mod_in_submod_sequence(mod_sequence, all_submod_lines_list, util_start_index)
-                    ###New marker is super close. Let's check less carefully.
-                    if function_result == "markers_in_submod_sequence_one":                                                                                                                                                                                                                                                                     
+                    if function_result == "markers_in_submod_sequence_one":                                                                                                                                                                                                                                                                      
                         marker_found = True
                         lookahead = 1
+                        
                         submod_line_index_decreaser += 1
                         
-                    ###No markers super close.    
                     elif function_result == "markers_in_submod_sequence_one_fail" and markers_in_submod_sequence_one_fail_flag == False:
+                        
                         mod_line_index_decreaser += 1
                         submod_line_index_decreaser += 1
                         markers_in_submod_sequence_one_fail_flag = True
                         util_lookahead = lookahead
                         
-                    ###New marker is near. Let's check less carefully.                                                                                                                                                 
-                    elif function_result == "markers_in_submod_sequence_two":                                                                                                                       
+                    elif function_result == "markers_in_submod_sequence_two":                                                                                                                                                                                                                                                                       
+                        
                         submod_line_index_decreaser += 1
                         marker_found = True
-                        lookahead = 2
+                        lookahead = 2    
                         
-                    ###New marker is not anywhere near at all.                                                                                                                                                 
-                    elif function_result == "markers_in_submod_sequence_two_fail" and markers_in_submod_sequence_two_fail_flag == False:                        
+                    elif function_result == "markers_in_submod_sequence_two_fail" and markers_in_submod_sequence_two_fail_flag == False:                                                                                                                                             
+                        
                         mod_line_index_decreaser += 1
                         submod_line_index_decreaser += 1
                         markers_in_submod_sequence_two_fail_flag = True
-                        
-                    ###Found the lines, but they are all spaces or braces, which might be false positive. Checking next lines.
+                    
                     elif function_result == "markers_second_check":
                         submod_line_index_decreaser += 1
                         markers_second_check_started = True
                         
-                    ###Doesn't look that way, checking some more.
-                    elif function_result == False:                                                                                                                                            
+                    elif function_result == False:                                                                                                                                         
                         submod_line_index_decreaser += 1
                      
-                    ###Found the lines. The delition/replacement is over, continuing as usual.
                     elif function_result == True and markers_second_check_started == True:
                         file.write(current_mod_line + "\n")
+
                         mod_deletion_started = False
                         mod_deletion_completed = False
                         mod_replacement_started = False
@@ -317,9 +346,9 @@ def process_files(mod_file, submod_file, output_file):
                         markers_second_check_started = False
                         lookahead = lookahead_constant
                         util_lookahead = 2
-                        
-                    ###Found the lines. The delition/replacement is over, continuing as usual.
+                     
                     elif function_result == True:
+                        
                         mod_deletion_started = False
                         mod_deletion_completed = False
                         mod_replacement_started = False
@@ -331,59 +360,57 @@ def process_files(mod_file, submod_file, output_file):
                         submod_line_index_decreaser += 1
                         lookahead = lookahead_constant
                         util_lookahead = 2
-                ###Mod content remover end        
-                    
-                    ###Lines are not equal. ###MOD_ADD1### detected, printing mod code and then your code.
+                #############################        
+                ###Mod content remover end###        
+                #############################
+                
                 elif current_mod_line.strip() != current_submod_line.strip() and "###MOD_ADD1###" in current_submod_line and not new_content_found == True:
                     file.write(current_mod_line + "\n")
                     file.write(current_submod_line)
+                    
                     submod_line_index_increaser +=1                    
                 
-                ###New content printer
-                    ###New content is still there but mod file is already over. Printing only new content from now on, not looking at anything else.
+                #########################
+                ###New content printer###
+                #########################
                 elif new_content_found == True and new_content_end_found == False and next_submod_line_index is None:
                     file.write(current_mod_line + "\n")
                     new_content_found = False 
-                
-                    ###Next lines are equal, but they are both spaces or braces. Not accurate enough to be sure, let's check some more.
-                elif new_content_found == True and new_content_end_found == False and ((next_mod_line.strip() == "" and next_submod_line.strip() == "") or (next_mod_line.strip() == "}" and next_submod_line.strip() == "}")):
+                    
+                elif new_content_found == True and new_content_end_found == False and ((next_mod_line.strip() == "" and next_submod_line.strip() == "") or (next_mod_line.strip() == "}" and next_submod_line.strip() == "}")): ### current_submod_line and current_mod_line can have a common line if they are both " " or "}", 
+                                                                                                                                                                                                                                ### but this usually doesn't mean that script found right code lines, there are a lot of spaces and braces.
                     mod_line_index_decreaser += 1
                     submod_line_index_increaser += 1
                     
-                    ###Next lines are equal, but they are both spaces or braces. Not accurate enough to be sure, let's look for other end.
-                elif new_content_found == True and new_content_end_found == True and ((next_mod_line.strip() == "" and next_submod_line.strip() == "") or (next_mod_line.strip() == "}" and next_submod_line.strip() == "}")):                                       
+                elif new_content_found == True and new_content_end_found == True and ((next_mod_line.strip() == "" and next_submod_line.strip() == "") or (next_mod_line.strip() == "}" and next_submod_line.strip() == "}")):                                             
                     file.write(current_mod_line + "\n")      
-                    
-                    ###Printing more code from the mod until we find where it ends. Also, do those submod lines even exist inside the mod?
+                
                 elif new_content_found == True and new_content_end_found == False and next_mod_line.strip() != next_submod_line.strip():
                     ###Getting submod sequence, with a check that prevents it from trying to grab non-existing variables.
                     submod_sequence = [all_submod_lines_list.get(sorted_submod_indexes[i + 1 + submod_line_index_increaser - submod_line_index_decreaser + k], "") for k in range(lookahead) if i + 1 + submod_line_index_increaser - submod_line_index_decreaser + k < len(sorted_submod_indexes)]
-                    
-                    ###They do not, probably got removed. Let's try checking other lines to find where everything matches again
                     if not find_submod_in_mod_sequence(submod_sequence, all_mod_lines_list, i):
+
                         mod_line_index_decreaser += 1
-                        
-                    ###They do. Let's wait for them to appear then.    
                     else:
                         submod_line_index_decreaser += 1
                         new_content_end_found = True
                         
-                    ###Next lines are equal, and they are not spaces or braces. New mod code is over.    
                 elif new_content_found == True and next_mod_line.strip() == next_submod_line.strip():
                     file.write(current_mod_line + "\n")
                     new_content_found = False 
                 
-                    ###Printing mod lines, waiting for equal submod lines.
                 elif new_content_found == True and new_content_end_found == True:
+                    
                     submod_line_index_decreaser += 1
                     file.write(current_mod_line + "\n")
-                ###New code printer end
+                ##########################
+                ###New code printer end###
+                ##########################
                 
                 ###This is for the cases when only one line of code in the mod was changed after update, not a whole block.
                 elif new_content_found == False and current_mod_line.strip() != current_submod_line.strip() and next_mod_line.strip() == next_submod_line.strip() or next_submod_line_index is None:               
                     file.write(current_mod_line + "\n")
                     
-                ###Lines are the same. Keeping the code from the original mod    
                 elif current_mod_line.strip() == current_submod_line.strip():
                     file.write(current_mod_line + "\n")  
                 
@@ -398,15 +425,15 @@ def process_files(mod_file, submod_file, output_file):
             mod_fail = False
         
         if constant_new_content_found == False:
-            os.remove(output_file)        
-        
+            os.remove(output_file)
+            
     except Exception as e:
         print(f"Error writing to output file: {e}")
 
-def main():
+def main(config_file):
     try:
         with open(config_file, 'r') as file:
-        
+            
             for line in file:
                 line = line.strip()
                 
@@ -420,11 +447,13 @@ def main():
                     key, value = map(str.strip, path.split('='))
                     file_paths[key] = value
                     
+                print(f"File paths: {file_paths}")
                 mod_file = file_paths.get('mod_file')
                 submod_file = file_paths.get('submod_file')
                 
                 if mod_file and submod_file:
                     output_file = os.path.splitext(submod_file)[0] + "_output" + os.path.splitext(submod_file)[1]
+                    print(f"\nProcessing mod file: {mod_file}, submod file: {submod_file}, output file: {output_file}")
                     process_files(mod_file, submod_file, output_file)
                     
                 else:
@@ -433,109 +462,241 @@ def main():
     except Exception as e:
         print(f"Error reading config file: {e}")
 
-#####THE INTERFACE#####
-###Add your stuff
-def add_pair():
-    mod_path = filedialog.askopenfilename()
-    if mod_path:
-        submod_path = filedialog.askopenfilename()
-        if submod_path:
-            with open('file_paths.txt', 'a') as f:
-                f.write(f"mod_file={mod_path},submod_file={submod_path}\n")
-            refresh_listbox()
-
-###Delete your stuff (not the files themself, the paths to files)
-def delete_pair():
-    selected_index = listbox.curselection()
-    if selected_index:
-        with open('file_paths.txt', 'r') as f:
-            lines = f.readlines()
-        with open('file_paths.txt', 'w') as f:
-            for i, line in enumerate(lines):
-                if i != selected_index[0]:
-                    f.write(line)
-        refresh_listbox()
-
-###Refresh
-def refresh_listbox():
-    listbox.delete(0, tk.END)
-    with open('file_paths.txt', 'r') as f:
-        for line in f:
-            mod_path = line.split(",")[0].split(":")[1].strip()
-            submod_path = line.split(",")[1].split(":")[1].strip()
-            mod_name = os.path.basename(mod_path)
-            submod_name = os.path.basename(submod_path)
-            listbox.insert(tk.END, f"Original file: {mod_name}, Your file: {submod_name}")
-            status_label.config(text="")
-
-###RUN
-def run_script():
-    selected_index = listbox.curselection()
+####################
+####THE INTERFACE###
+####################
+class UpToDater(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+        self.config_file = ""
+        self.setWindowTitle("Up_to_dater")
+        self.setStyleSheet("background-color: black; color: white;")
+        self.refresh_listbox()
     
-    if not selected_index:
-        selected_index = (0,)
+    def initUI(self):
+        ###Main layout
+        main_layout = QVBoxLayout()
         
-    if selected_index:
-        with open('file_paths.txt', 'r') as f:
-            lines = f.readlines()
-            if len(lines) > 0:
-                mod_path = lines[selected_index[0]].split(",")[0].split(":")[1].strip()
-                submod_path = lines[selected_index[0]].split(",")[1].split(":")[1].strip()
-                
-                status_label.config(text="Running script...")
+        ###Instructions label
+        instruction_label = QLabel("Select or create a project file. Press 'Add Pair' to set paths to mod files. Select the original file, then your file.")
+        instruction_label.setStyleSheet("color: white;")
+        main_layout.addWidget(instruction_label)
+
+        ###Files list
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+
+        self.list_widget = QListWidget()
+        self.list_widget.setStyleSheet("background-color: black; color: white; selection-background-color: gray; selection-color: black;")
+        
+        scroll_area.setWidget(self.list_widget)
+        main_layout.addWidget(scroll_area)
+
+        ###Button Layout for Load Project and Create New Project File
+        button_row_layout = QHBoxLayout()
+
+        load_project_button = QPushButton("Load Project")
+        load_project_button.clicked.connect(self.load_project)
+        load_project_button.setStyleSheet("background-color: white; color: black;")
+        button_row_layout.addWidget(load_project_button)
+
+        new_file_button = QPushButton("Create New Project File")
+        new_file_button.clicked.connect(self.create_new_file)
+        new_file_button.setStyleSheet("background-color: white; color: black;")
+        button_row_layout.addWidget(new_file_button)
+
+        main_layout.addLayout(button_row_layout)
+
+        ###Add Pair, Refresh List, Delete Pair
+        button_frame = QHBoxLayout()
+
+        add_button = QPushButton("Add Pair")
+        add_button.clicked.connect(self.add_pair)
+        add_button.setStyleSheet("background-color: white; color: black;")
+        button_frame.addWidget(add_button)
+
+        refresh_button = QPushButton("Refresh List")
+        refresh_button.clicked.connect(self.refresh_listbox)
+        refresh_button.setStyleSheet("background-color: white; color: black;")
+        button_frame.addWidget(refresh_button)
+
+        delete_button = QPushButton("Delete Pair")
+        delete_button.clicked.connect(self.delete_pair)
+        delete_button.setStyleSheet("background-color: white; color: black;")
+        button_frame.addWidget(delete_button)
+
+        main_layout.addLayout(button_frame)
+
+        ###Run Script
+        run_button = QPushButton("Run Script")
+        run_button.clicked.connect(self.run_script)
+        run_button.setStyleSheet("background-color: red; color: black;")
+        main_layout.addWidget(run_button, alignment=Qt.AlignHCenter)
+
+        ###Status label
+        self.status_label = QLabel("")
+        self.status_label.setStyleSheet("color: white;")
+        main_layout.addWidget(self.status_label, alignment=Qt.AlignCenter)
+
+        ###Setting the main layout to the central widget
+        central_widget = QWidget()
+        central_widget.setLayout(main_layout)
+        self.setCentralWidget(central_widget)
+        
+        self.resize(1200, 800)
+        
+    def refresh_listbox(self):
+        if self.list_widget is not None:
+            self.list_widget.clear()  ###Clears the list widget
+        
+        if not hasattr(self, 'config_file'):
+            self.status_label.setText("No project file selected.")
+            return
+        
+        try:
+            with open(self.config_file, 'r') as f:
+                for line in f:
+                    mod_path = line.split(",")[0].split("=")[1].strip()
+                    submod_path = line.split(",")[1].split("=")[1].strip()
+                    mod_name = os.path.basename(mod_path)
+                    submod_name = os.path.basename(submod_path)
+
+                    ###Making submod and modlines look prettier
+                    row_widget = QWidget()
+                    row_layout = QHBoxLayout(row_widget)
+                    mod_label = QLabel(f"mod: {mod_name}")
+                    mod_label.setStyleSheet("padding-right: 20px;")
+                    submod_label = QLabel(f"submod: {submod_name}")
+                    
+                    ###Adding labels to the layout
+                    row_layout.addWidget(mod_label)
+                    row_layout.addWidget(submod_label)
+                    
+                    ###Setting the layout and add QWidget to QListWidgetItem
+                    row_widget.setLayout(row_layout)
+                    list_item = QListWidgetItem(self.list_widget)
+                    list_item.setSizeHint(row_widget.sizeHint())
+                    self.list_widget.setItemWidget(list_item, row_widget)
+                    
+                    ###Connects to selection function to apply highlighting
+            self.list_widget.itemSelectionChanged.connect(self.highlight_selection)
+
+            self.status_label.setText("")
+        except FileNotFoundError:
+            self.status_label.setText("Error: Project file not found.")   
+    
+    def load_project(self):
+        ###Selecting a file
+        config_file, _ = QFileDialog.getOpenFileName(self, "Select Configuration File", "", "Text Files (*.txt)")
+        
+        ###Checking if a file was selected
+        if config_file:
+            self.config_file = os.path.normpath(config_file)  ###Normalizing the path, unnecessary as it turns out, but let's keep it.
+            self.status_label.setText(f"Loaded project: {os.path.basename(config_file)}")
+            self.refresh_listbox()
+    
+    def create_new_file(self):
+        ###Create your thing
+        new_file_name, _ = QInputDialog.getText(self, "New File Name", "Enter a name for the new project file:")
+        
+        if new_file_name:
+            ###Defining the full path for the new file
+            directory = os.path.dirname(self.config_file)  ###Add it to here
+            new_file_path = os.path.join(directory, f"{new_file_name}.txt")
+            
+            ###You already have this file, mr. dementia
+            if os.path.exists(new_file_path):
+                QMessageBox.warning(self, "Error", "A file with this name already exists. Please choose a different name.")
+            else:
+                with open(new_file_path, 'w') as new_file:
+                    new_file.write("")
+                QMessageBox.information(self, "Success", f"New file created: {new_file_path}")
+    
+    def add_pair(self):
+        mod_path, _ = QFileDialog.getOpenFileName(self, "Select Original File")
+        if mod_path:
+            submod_path, _ = QFileDialog.getOpenFileName(self, "Select Your File")
+            if submod_path:
+                with open(self.config_file, 'a') as f:
+                    f.write(f"mod_file={mod_path},submod_file={submod_path}\n")
+                self.refresh_listbox()
+
+    def delete_pair(self):
+    ###Getting the selected items from the list widget
+        selected_items = self.list_widget.selectedItems()
+        
+        if selected_items:
+            ###Getting the index of the selected item
+            selected_index = self.list_widget.row(selected_items[0])
+
+            ###Removing
+            with open(self.config_file, 'r') as f:
+                lines = f.readlines()
+            with open(self.config_file, 'w') as f:
+                for i, line in enumerate(lines):
+                    if i != selected_index:
+                        f.write(line)
+
+            self.refresh_listbox()
+
+            ###Determine the new selection index (one above the deleted item or the top if it was the first item)
+            new_row = max(0, selected_index - 1)
+
+            ###Setting the new row as selected if items remain in the list
+            if self.list_widget.count() > 0:
+                self.list_widget.setCurrentRow(new_row)
+
+    def highlight_selection(self):
+        ###Zalooping through all items to reset background color for non-selected items
+        for i in range(self.list_widget.count()):
+            item = self.list_widget.item(i)
+            widget = self.list_widget.itemWidget(item)
+            
+            if item.isSelected():
+                widget.setStyleSheet("background-color: grey;")
+            else:
+                widget.setStyleSheet("background-color: none;")
+    
+    ###Delete pairs by delete key, because conviniece and stuff
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Delete:
+            selected_items = self.list_widget.selectedItems()
+            if selected_items:
+                self.delete_pair()
+
+            event.accept()
+        else:
+            super().keyPressEvent(event)
+    
+    def run_script(self):
+        selected_items = self.list_widget.selectedItems()
+        selected_index = self.list_widget.row(selected_items[0]) if selected_items else 0
+        
+        try:
+            with open(self.config_file, 'r') as f:
+                lines = f.readlines()
+            if lines:
+                mod_path = lines[selected_index].split(",")[0].split("=")[1].strip()
+                submod_path = lines[selected_index].split(",")[1].split("=")[1].strip()
+                self.status_label.setText("Running script...")
                 
                 def script_thread():
                     try:
-                        main()
-                        status_label.config(text="Script executed successfully. Or not.")
+                        main(self.config_file)
+                        self.status_label.setText("Script executed successfully. Or not.")
                     except Exception as e:
-                        status_label.config(text=f"Error: {str(e)}")
-                
+                        self.status_label.setText(f"Error: {str(e)}")
+
                 thread = threading.Thread(target=script_thread)
                 thread.start()
- 
             else:
-                status_label.config(text="No paths available to run.")
-            
-###Title
-root = tk.Tk()
-root.title("Up_to_dater")
+                self.status_label.setText("No paths available to run.")
+        except FileNotFoundError:
+            self.status_label.setText("Error: Project file not found.")
 
-###Instructions
-root.configure(bg='black')
-
-label = tk.Label(root, text="Press 'Add Pair', select the original file, then your file.", bg='black', fg='white')
-label.pack(pady=10)
-
-frame = tk.Frame(root, bg='black')
-frame.pack(padx=10, pady=10)
-
-listbox = tk.Listbox(frame, width=100, height=10, bg='black', fg='white', selectbackground='gray', selectforeground='black')
-listbox.pack(side=tk.LEFT, fill=tk.BOTH)
-
-scrollbar = tk.Scrollbar(frame, orient="vertical")
-scrollbar.config(command=listbox.yview)
-scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-listbox.config(yscrollcommand=scrollbar.set)
-
-button_frame = tk.Frame(root, bg='black')
-button_frame.pack(pady=10)
-
-add_button = tk.Button(button_frame, text="Add Pair", command=add_pair, bg='white', fg='black')
-add_button.grid(row=0, column=0, padx=5, pady=5)
-
-refresh_button = tk.Button(button_frame, text="Refresh List", command=refresh_listbox, bg='white', fg='black')
-refresh_button.grid(row=0, column=1, padx=5, pady=5)
-
-delete_button = tk.Button(button_frame, text="Delete Pair", command=delete_pair, bg='white', fg='black')
-delete_button.grid(row=0, column=2, padx=5, pady=5)
-
-run_button = tk.Button(button_frame, text="Run Script", command=run_script, bg='red', fg='black')
-run_button.grid(row=1, column=1, pady=10)
-
-status_label = tk.Label(root, text="", bg='black', fg='white')
-status_label.pack(pady=10)
-
-refresh_listbox()
-
-root.mainloop()
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    updater = UpToDater()
+    updater.show()
+    sys.exit(app.exec_())
