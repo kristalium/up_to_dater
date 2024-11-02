@@ -36,19 +36,18 @@ Don't delete your mod files after the script gives you the output. Backups are i
 Script was tested on HOI4 code - I have no idea if it works for other Paradox games. If it does, well, great.
 
 ## How to use
-1. Download [Python](https://www.python.org/downloads/), then this script (with a green button that says code). If it doesn't work right away try to check if tkinter got installed or not.
+1. Download the program.
 
-2. Now go to your mod and mark all things that you have changed. Instruction for people who like diagrams:
+2. Inside of your mod files mark everything that you have changed. Instruction on how to mark for people who like diagrams:
 
 ![howto](https://github.com/kristalium/up_to_dater/assets/163107856/23d042b8-44e6-47b5-818b-5150f5be6ecd)
 
 You can do it inside any file - .txt .yml .gui - doesn't matter.
 
-3. Run the script. Select the folders with the files. Select the original file first, then your file second.
+3. Run the program. "Create a new project" or "load project" will create or load a .txt file that will store paths to files. To add paths, you press "Add Pair", go through you folders and select what you need. Select the original file first, then your file second. To delete a path press "delete pair" or del on the keyboard. 
+![Untitled](https://github.com/user-attachments/assets/10bbde65-1758-4f9a-b87b-c53dae32a4e8)
 
-![window](https://github.com/kristalium/up_to_dater/assets/163107856/acf1604d-0f7b-423d-ab8c-95f1a8fb6897)
-
-4. Press the red button.
+4. When you are done with everything, press the red button.
 
 5. Beep boop.
 
